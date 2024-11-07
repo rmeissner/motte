@@ -1,7 +1,7 @@
 package motte.crypto.keys
 
-import dev.rimeissner.motte.keys.BouncyHDNodeFactoryImpl
-import dev.rimeissner.motte.keys.toBase58
+import dev.rimeissner.motte.keys.BouncyHDNodeFactory
+import dev.rimeissner.motte.utils.toBase58
 import okio.ByteString.Companion.decodeHex
 import okio.ByteString.Companion.toByteString
 import org.junit.Assert.assertEquals
@@ -13,7 +13,7 @@ import kotlin.test.Test
 class BouncyHDNodeFactoryTest {
     @Test
     fun derive() {
-        val factory = BouncyHDNodeFactoryImpl()
+        val factory = BouncyHDNodeFactory()
         // Create node -> author wire harbor elbow library sphere nothing receive team
         val masterNode =
             factory.masterNode("358ace7a8cff8d5d42e2b33b5a8584b785e317df5f7b2717b4c5da23faf1f1442a644117005b37874b1be21b7a76cf4cd942dd93aabf5e33f392944f83e8ce33".hexToByteArray())
@@ -42,7 +42,7 @@ class BouncyHDNodeFactoryTest {
 
     @Test
     fun deriveSelf() {
-        val factory = BouncyHDNodeFactoryImpl()
+        val factory = BouncyHDNodeFactory()
         // Create node -> author wire harbor elbow library sphere nothing receive team
         val masterNode =
             factory.masterNode("358ace7a8cff8d5d42e2b33b5a8584b785e317df5f7b2717b4c5da23faf1f1442a644117005b37874b1be21b7a76cf4cd942dd93aabf5e33f392944f83e8ce33".hexToByteArray())
@@ -54,7 +54,7 @@ class BouncyHDNodeFactoryTest {
 
     @Test
     fun deriveInvalid() {
-        val factory = BouncyHDNodeFactoryImpl()
+        val factory = BouncyHDNodeFactory()
         // Create node -> author wire harbor elbow library sphere nothing receive team
         val masterNode =
             factory.masterNode("358ace7a8cff8d5d42e2b33b5a8584b785e317df5f7b2717b4c5da23faf1f1442a644117005b37874b1be21b7a76cf4cd942dd93aabf5e33f392944f83e8ce33".hexToByteArray())

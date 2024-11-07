@@ -15,6 +15,7 @@ interface KeyPairFactory {
 }
 
 interface HDNodeFactory {
+    fun masterNode(seed: ByteArray): HDNode
     fun derive(node: HDNode, path: String): HDNode
 }
 

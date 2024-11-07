@@ -127,7 +127,7 @@ class BouncyKeyEngine : KeyEngine {
     }
 }
 
-class BouncyKeyPairFactoryImpl : KeyPairFactory {
+class BouncyKeyPairFactory : KeyPairFactory {
     override fun fromPrivateKey(privateKey: ByteArray): KeyPair {
         val pkNum = BigInteger(1, privateKey)
         val pubKey = SECP256K1.g.multiply(pkNum).getEncoded(true)
@@ -136,10 +136,10 @@ class BouncyKeyPairFactoryImpl : KeyPairFactory {
 }
 
 class BouncyHDNodeFactory(
-    private val keyPairFactory: KeyPairFactory = BouncyKeyPairFactoryImpl()
+    private val keyPairFactory: KeyPairFactory = BouncyKeyPairFactory()
 ) : HDNodeFactory {
 
-    fun masterNode(seed: ByteArray): HDNode {
+    override fun masterNode(seed: ByteArray): HDNode {
         val hash = seed.toByteString().hmacSha512(MASTER_SECRET.encodeUtf8())
         val rootKeyPair = keyPairFactory.fromPrivateKey(hash.substring(0, 32).toByteArray())
         val chainCode = hash.substring(32).toByteArray()

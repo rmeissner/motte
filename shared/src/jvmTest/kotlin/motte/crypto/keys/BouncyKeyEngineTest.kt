@@ -2,7 +2,7 @@ package motte.crypto.keys
 
 import dev.rimeissner.motte.keys.KeyPair
 import dev.rimeissner.motte.keys.Signature
-import dev.rimeissner.motte.keys.BouncyKeyEngineImpl
+import dev.rimeissner.motte.keys.BouncyKeyEngine
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -11,7 +11,7 @@ import org.junit.Test
 class BouncyKeyEngineTest {
     @Test
     fun sign_isCorrect() {
-        val engine = BouncyKeyEngineImpl()
+        val engine = BouncyKeyEngine()
         val keyPair = KeyPair(
             publicKey = "0314bcddd11fc0b4c6202574c82583c2bafc1f0639aec7017fd43a72b9407a1dd9".hexToByteArray(),
             privateKey = "8678adf78db8d1c8a40028795077b3463ca06a743ca37dfd28a5b4442c27b457".hexToByteArray()
