@@ -7,10 +7,12 @@ import dev.rimeissner.motte.encryption.CryptoData
 import org.bouncycastle.crypto.generators.SCrypt
 
 class PasswordAuthorization(
-    private val password: String,
+    password: String,
     private val generalStorage: GeneralStorage,
     private val passwordId: String = "default"
 ) : Authorization {
+
+    private val passwordBytes = preparePassword(password)
 
     private fun preparePassword(password: String): ByteArray =
         password.toByteArray().run {
@@ -28,7 +30,6 @@ class PasswordAuthorization(
         "${key}::${passwordId}"
 
     override fun setup(key: ByteArray) {
-        val passwordBytes = preparePassword(password)
         val checksum = checksum(passwordBytes)
         val checksumData = BouncyAESEngine({ passwordBytes }).encrypt(checksum)
         generalStorage.putString(
@@ -42,19 +43,31 @@ class PasswordAuthorization(
         )
     }
 
-    override fun keyBytes(keyChecksum: ByteArray): ByteArray {
+    private fun getAndVerifyPasswordBytes(): ByteArray {
         val checksumData =
             generalStorage.getString(withPasswordId(ID_ENCRYPTED_CHECKSUM))
                 ?: throw IllegalStateException("No password set")
-        val passwordBytes = preparePassword(password)
         val passwordChecksum =
             BouncyAESEngine({ passwordBytes }).decrypt(CryptoData.fromString(checksumData))
         if (!checksum(passwordBytes).contentEquals(passwordChecksum))
             throw IllegalArgumentException("Invalid password")
+        return passwordBytes
+    }
+
+    override fun verify(): Boolean {
+        try {
+            getAndVerifyPasswordBytes()
+            return true
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    override fun keyBytes(keyChecksum: ByteArray): ByteArray {
         val keyData =
             generalStorage.getString(withPasswordId(ID_ENCRYPTED_APP_SIGNER_KEY))
                 ?: throw IllegalStateException("No password set")
-        val key = BouncyAESEngine({ passwordBytes })
+        val key = BouncyAESEngine({ getAndVerifyPasswordBytes() })
             .decrypt(CryptoData.fromString(keyData))
         if (!checksum(key).contentEquals(keyChecksum))
             throw IllegalStateException("Unexpected key")
@@ -71,5 +84,12 @@ class PasswordAuthorization(
             "password_authorization.string.encrypted_app_signer_key"
         private const val ID_ENCRYPTED_CHECKSUM =
             "password_authorization.string.encrypted_checksum"
+
+        fun isConfigured(
+            generalStorage: GeneralStorage,
+            passwordId: String = "default"
+        ) =
+            generalStorage.hasKey("${ID_ENCRYPTED_APP_SIGNER_KEY}::${passwordId}") &&
+                    generalStorage.hasKey("${ID_ENCRYPTED_CHECKSUM}::${passwordId}")
     }
 }

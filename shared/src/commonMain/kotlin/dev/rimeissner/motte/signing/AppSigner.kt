@@ -37,6 +37,12 @@ class AppSignerManager(
         return nodeFactory.derive(masterNode, path).keyPair
     }
 
+    suspend fun isSetup(): Boolean {
+        keyLock.withLock {
+            return getAppSignerKeyChecksum() != null
+        }
+    }
+
     suspend fun addAuth(newAuth: Authorization, existingAuth: Authorization? = null) {
         keyLock.withLock {
             val appKey = getAppSignerKeyChecksum()?.let {
