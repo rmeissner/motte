@@ -169,4 +169,12 @@ actual class BigDecimal {
         TODO("Not yet implemented")
     }
 
+    actual fun toFloat(): Float {
+        TODO("Not yet implemented")
+    }
+
+    actual fun format(format: String): String {
+        TODO("Not yet implemented")
+    }
+
 }

@@ -4,6 +4,7 @@ package dev.rimeissner.motte.math
 
 import java.math.BigInteger
 import java.security.SecureRandom
+import java.text.DecimalFormat
 import java.math.BigDecimal as JavaBigDecimal
 
 actual class BigNumber(private val num: BigInteger) {
@@ -118,6 +119,12 @@ actual class BigDecimal(private val num: JavaBigDecimal) {
 
     actual fun pow(exponent: Int) =
         BigDecimal(num.pow(exponent))
+
+    actual fun toFloat() =
+        num.toFloat()
+
+    actual fun format(format: String) =
+        DecimalFormat(format).format(num)
 
     actual companion object {
         actual fun from(encoded: String): BigDecimal =

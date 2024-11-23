@@ -53,4 +53,7 @@ expect class BigDecimal {
     fun mul(other: BigDecimal): BigDecimal
     fun div(other: BigDecimal): BigDecimal
     fun pow(exponent: Int): BigDecimal
+
+    fun toFloat(): Float
+    fun format(format: String): String
 }
