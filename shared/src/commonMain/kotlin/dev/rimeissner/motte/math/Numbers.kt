@@ -48,6 +48,8 @@ expect class BigDecimal {
         fun from(number: BigNumber): BigDecimal
     }
 
+    operator fun compareTo(other: BigDecimal): Int
+
     fun add(other: BigDecimal): BigDecimal
     fun sub(other: BigDecimal): BigDecimal
     fun mul(other: BigDecimal): BigDecimal

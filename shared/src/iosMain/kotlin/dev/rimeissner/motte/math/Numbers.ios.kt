@@ -177,4 +177,8 @@ actual class BigDecimal {
         TODO("Not yet implemented")
     }
 
+    actual operator fun compareTo(other: BigDecimal): Int {
+        TODO("Not yet implemented")
+    }
+
 }

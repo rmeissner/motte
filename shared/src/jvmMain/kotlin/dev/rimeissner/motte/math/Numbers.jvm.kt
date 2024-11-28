@@ -136,4 +136,7 @@ actual class BigDecimal(private val num: JavaBigDecimal) {
         actual fun from(number: BigNumber): BigDecimal =
             number.decimal()
     }
+
+    actual operator fun compareTo(other: BigDecimal): Int =
+        num.compareTo(other.num)
 }
