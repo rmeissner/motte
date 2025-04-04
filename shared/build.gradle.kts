@@ -29,6 +29,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.kotlin.stdlib)
             implementation(libs.okio)
             implementation(libs.kotlinx.coroutines)
         }

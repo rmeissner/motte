@@ -1,6 +1,5 @@
 package motte.crypto.signing
 
-import dev.rimeissner.motte.encoding.keccak
 import dev.rimeissner.motte.keys.BouncyHDNodeFactory
 import dev.rimeissner.motte.keys.BouncyKeyEngine
 import dev.rimeissner.motte.mnemonics.BouncyMnemonicsFactory

@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Motte"
-include(":shared")
+include(":shared", ":safe")

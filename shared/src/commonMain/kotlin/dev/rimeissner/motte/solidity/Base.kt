@@ -40,7 +40,15 @@ abstract class Collection<out T : Type>(val items: List<T>) : Type {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Collection<*>) return false
-        return items == other.items
+        if (items.size != other.items.size) return false
+        items.forEachIndexed { index, t ->
+            if (other.items[index] != t) return false
+        }
+        return true
+    }
+
+    override fun toString(): kotlin.String {
+        return "Collection[${items.joinToString(",")}]"
     }
 
     override fun hashCode(): Int {
@@ -50,7 +58,7 @@ abstract class Collection<out T : Type>(val items: List<T>) : Type {
     abstract fun isDynamic(): Boolean
 }
 
-abstract class UIntBase(private val value: BigNumber, private val bitLength: Int) : StaticType {
+open class UIntBase(private val value: BigNumber, private val bitLength: Int) : StaticType {
     init {
         when {
             bitLength % 8 != 0 -> throw InvalidBitLengthException.NOT_MULTIPLE_OF_EIGHT
@@ -75,6 +83,8 @@ abstract class UIntBase(private val value: BigNumber, private val bitLength: Int
         return value.hashCode()
     }
 
+    override fun toString(): kotlin.String = "UInt$bitLength(${value.toString(10)})"
+
     open class Decoder<out T : UIntBase>(private val factory: (BigNumber) -> T) :
         TypeDecoder<T> {
         override fun isDynamic(): Boolean {
@@ -88,7 +98,7 @@ abstract class UIntBase(private val value: BigNumber, private val bitLength: Int
 
 }
 
-abstract class IntBase(private val value: BigNumber, private val bitLength: Int) : StaticType {
+open class IntBase(private val value: BigNumber, private val bitLength: Int) : StaticType {
     init {
         if (bitLength % 8 != 0) throw InvalidBitLengthException.NOT_MULTIPLE_OF_EIGHT
         val min = BigNumber.from(2).pow(bitLength - 1).negate()
@@ -124,6 +134,8 @@ abstract class IntBase(private val value: BigNumber, private val bitLength: Int)
         return value.hashCode()
     }
 
+    override fun toString(): kotlin.String = "Int$bitLength(${value.toString(10)})"
+
     open class Decoder<out T : IntBase>(private val factory: (BigNumber) -> T) :
         TypeDecoder<T> {
         override fun isDynamic(): Boolean {
@@ -136,7 +148,7 @@ abstract class IntBase(private val value: BigNumber, private val bitLength: Int)
     }
 }
 
-abstract class StaticBytes(val byteArray: ByteArray, nBytes: Int) : StaticType {
+open class StaticBytes(val byteArray: ByteArray, nBytes: Int) : StaticType {
     init {
         if (byteArray.size > nBytes) throw IllegalArgumentException("Byte array has ${byteArray.size} bytes. It should have no more than $nBytes bytes.")
     }
@@ -218,18 +230,19 @@ private fun <T : Type> decodeList(
             // Decode dynamic data at offset
             itemDecoder.decode(source.subData(offset))
         } else {
+            // If static type then the source might be consumed by the item decoder
             itemDecoder.decode(source)
         }
     }
 }
 
-abstract class Array<out T : Type>(items: List<T>, val capacity: Int) :
+open class Array<out T : Type>(items: List<T>, val capacity: Int) :
     Collection<T>(checkCapacity(items, capacity)) {
     override fun encode(): kString {
         if (items.size != capacity) {
             throw IllegalStateException("Capacity mismatch!")
         }
-        // Encode the fixed array as a tuple where all parts are of the same time
+        // Encode the fixed array as a tuple where all parts are of the same type
         return encodeTuple(items)
     }
 
@@ -238,6 +251,17 @@ abstract class Array<out T : Type>(items: List<T>, val capacity: Int) :
             return false
         }
         return items.any { isDynamic(it) }
+    }
+
+    class Decoder<out T : Type>(private val itemDecoder: TypeDecoder<T>, private val capacity: Int) :
+        TypeDecoder<Array<T>> {
+        override fun isDynamic(): Boolean {
+            return itemDecoder.isDynamic()
+        }
+
+        override fun decode(source: PartitionData): Array<T> {
+            return Array(decodeList(source, capacity, itemDecoder), capacity)
+        }
     }
 
     companion object {
@@ -260,7 +284,7 @@ class Vector<out T : Type>(items: List<T>) : Collection<T>(items), DynamicType {
 
     private fun encodeParts(): DynamicType.Parts {
         val length = items.size.toString(16).padStart(PADDED_HEX_LENGTH, '0')
-        // Encode the dynamic array as the length and a tuple where all parts are of the same time
+        // Encode the dynamic array as the length and a tuple where all parts are of the same type
         return DynamicType.Parts(length, encodeTuple(items))
     }
 
@@ -277,6 +301,34 @@ class Vector<out T : Type>(items: List<T>) : Collection<T>(items), DynamicType {
         override fun decode(source: PartitionData): Vector<T> {
             val capacity = decodeUInt(source.consume()).toInt()
             return Vector(decodeList(source.subData(), capacity, itemDecoder))
+        }
+    }
+}
+
+class Tuple(items: List<Type>) : Collection<Type>(items) {
+
+    override fun encode() = encodeTuple(items)
+
+    override fun isDynamic() = items.any { isDynamic(it) }
+
+    class Decoder(private val itemDecoders: List<TypeDecoder<Type>>) :
+        TypeDecoder<Tuple> {
+        override fun isDynamic() = itemDecoders.any { it.isDynamic() }
+
+        override fun toString(): kotlin.String =
+            "Tuple(${itemDecoders.joinToString(",")})"
+
+        override fun decode(source: PartitionData): Tuple {
+            return Tuple(itemDecoders.map {
+                if (it.isDynamic()) {
+                    // Get offset
+                    val offset = BigNumber.from(source.consume(), 16).toExactInt()
+                    // Decode dynamic data at offset
+                    it.decode(source.subData(offset))
+                } else {
+                    it.decode(source)
+                }
+            })
         }
     }
 }
@@ -415,6 +467,16 @@ open class Bytes(
     }
 
     override fun encodePacked(): kString = items.toHex()
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || other !is Bytes) return false
+        return items.contentEquals(other.items)
+    }
+
+    override fun hashCode(): Int {
+        return items.contentHashCode()
+    }
 
     class Decoder : TypeDecoder<Bytes> {
         override fun isDynamic(): Boolean = true
