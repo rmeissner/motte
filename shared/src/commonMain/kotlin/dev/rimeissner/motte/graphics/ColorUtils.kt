@@ -1,4 +1,4 @@
-package dev.rimeissner.merlon.crypto.graphics
+package dev.rimeissner.motte.graphics
 
 fun hueToRGB(p: Float, q: Float, h: Float): Float {
     var hue = h

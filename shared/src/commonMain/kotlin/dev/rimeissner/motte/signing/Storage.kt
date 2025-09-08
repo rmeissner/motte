@@ -1,5 +1,8 @@
 package dev.rimeissner.motte.signing
 
+/**
+ * Secure storage interface, where all data is encrypted with a password.
+ */
 interface SecureStorage {
     fun retrieve(key: String, passwordProvider: () -> ByteArray): String
     fun store(key: String, data: String, passwordProvider: () -> ByteArray)

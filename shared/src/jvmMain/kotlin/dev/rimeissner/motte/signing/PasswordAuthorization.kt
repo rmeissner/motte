@@ -38,7 +38,7 @@ class PasswordAuthorization(
         )
         val appSignerKeyData = BouncyAESEngine({ passwordBytes }).encrypt(key)
         generalStorage.putString(
-            withPasswordId(ID_ENCRYPTED_APP_SIGNER_KEY),
+            withPasswordId(ID_ENCRYPTED_KEY),
             appSignerKeyData.toString()
         )
     }
@@ -65,7 +65,7 @@ class PasswordAuthorization(
 
     override fun keyBytes(keyChecksum: ByteArray): ByteArray {
         val keyData =
-            generalStorage.getString(withPasswordId(ID_ENCRYPTED_APP_SIGNER_KEY))
+            generalStorage.getString(withPasswordId(ID_ENCRYPTED_KEY))
                 ?: throw IllegalStateException("No password set")
         val key = BouncyAESEngine({ getAndVerifyPasswordBytes() })
             .decrypt(CryptoData.fromString(keyData))
@@ -80,8 +80,8 @@ class PasswordAuthorization(
         private const val SCRYPT_PARALLELIZATION = 1
         private const val SCRYPT_KEY_LENGTH = 32
 
-        private const val ID_ENCRYPTED_APP_SIGNER_KEY =
-            "password_authorization.string.encrypted_app_signer_key"
+        private const val ID_ENCRYPTED_KEY =
+            "password_authorization.string.encrypted_key"
         private const val ID_ENCRYPTED_CHECKSUM =
             "password_authorization.string.encrypted_checksum"
 
@@ -89,7 +89,7 @@ class PasswordAuthorization(
             generalStorage: GeneralStorage,
             passwordId: String = "default"
         ) =
-            generalStorage.hasKey("${ID_ENCRYPTED_APP_SIGNER_KEY}::${passwordId}") &&
+            generalStorage.hasKey("${ID_ENCRYPTED_KEY}::${passwordId}") &&
                     generalStorage.hasKey("${ID_ENCRYPTED_CHECKSUM}::${passwordId}")
     }
 }

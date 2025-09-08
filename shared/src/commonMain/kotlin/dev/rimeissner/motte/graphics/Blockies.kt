@@ -1,4 +1,4 @@
-package dev.rimeissner.merlon.crypto.graphics
+package dev.rimeissner.motte.graphics
 
 import kotlin.math.abs
 import kotlin.math.floor

@@ -1,5 +1,6 @@
 package motte.crypto.signing
 
+import dev.rimeissner.motte.encoding.checksum
 import dev.rimeissner.motte.keys.BouncyHDNodeFactory
 import dev.rimeissner.motte.keys.BouncyKeyEngine
 import dev.rimeissner.motte.mnemonics.BouncyMnemonicsFactory
@@ -9,33 +10,33 @@ import dev.rimeissner.motte.signing.GeneralStorage
 import dev.rimeissner.motte.signing.PasswordAuthorization
 import dev.rimeissner.motte.signing.SecureDeviceStorage
 import kotlinx.coroutines.runBlocking
+import motte.crypto.mocks.MockAuthorization
+import motte.crypto.mocks.MockSecureStorage
 import motte.crypto.mocks.MockStorage
 import motte.crypto.mocks.PassThroughEncryptionEngine
 import org.bouncycastle.crypto.InvalidCipherTextException
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
-import org.junit.Before
-import org.junit.Test
+import utils.toHex
 import java.security.SecureRandom
 import kotlin.random.asKotlinRandom
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-
+import kotlin.test.assertTrue
 
 class AppSignerManagerTest {
     private lateinit var generalStorage: GeneralStorage
-    private lateinit var secureStorage: SecureDeviceStorage
     private lateinit var appSigner: AppSignerManager
 
-    @Before
+    @BeforeTest
     fun setup() {
         generalStorage = MockStorage()
-        secureStorage = SecureDeviceStorage(
-            deviceEncryption = PassThroughEncryptionEngine(),
-            generalStorage = generalStorage
-        )
         appSigner = AppSignerManager(
             generalStorage = generalStorage,
-            secureStorage = secureStorage,
+            secureStorage = MockSecureStorage(generalStorage),
             keyEngine = BouncyKeyEngine(),
             nodeFactory = BouncyHDNodeFactory(),
             mnemonicsFactory = BouncyMnemonicsFactory(ENGLISH_WORD_LIST),
@@ -44,11 +45,33 @@ class AppSignerManagerTest {
     }
 
     @Test
+    fun addInitialAuthorization() = runBlocking {
+        val auth = MockAuthorization()
+        assertNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
+        // Add initial authorization that will setup the app signer
+        appSigner.addAuth(auth)
+        assertNotNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
+        assertEquals(
+            checksum(auth.keyBytes!!).toHex(),
+            generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM)
+        )
+        val encryptedMnemonic = generalStorage.getString(ID_SIGNER_MNEMONIC)
+        assertNotNull(encryptedMnemonic)
+        // Mock storage appends the password with a :: separator to indicate encryption
+        assertTrue(encryptedMnemonic.startsWith("${auth.keyBytes!!.toHex()}::"))
+        val mnemonic = encryptedMnemonic.substringAfter("::")
+        // Check that a 24 word mnemonic was generated
+        // TODO verify this by passing in a mock mnemonicsFactory
+        assertTrue(mnemonic.split(" ").size == 24)
+    }
+
+    @Test
     fun addMultipleAuthorizations() = runBlocking {
         val auth1 = PasswordAuthorization("pw1", generalStorage)
-        assertNull(generalStorage.getString(ID_APP_SIGNER_KEY_CHECKSUM))
+        assertNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
+        // Add initial authorization that will setup the app signer
         appSigner.addAuth(auth1)
-        assertNotNull(generalStorage.getString(ID_APP_SIGNER_KEY_CHECKSUM))
+        assertNotNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
         val auth2 = PasswordAuthorization("pw2", generalStorage)
         appSigner.addAuth(auth2, auth1)
 
@@ -63,9 +86,9 @@ class AppSignerManagerTest {
     @Test
     fun addMultipleAuthorizationsDifferentIds() = runBlocking {
         val auth1 = PasswordAuthorization("pw1", generalStorage)
-        assertNull(generalStorage.getString(ID_APP_SIGNER_KEY_CHECKSUM))
+        assertNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
         appSigner.addAuth(auth1)
-        assertNotNull(generalStorage.getString(ID_APP_SIGNER_KEY_CHECKSUM))
+        assertNotNull(generalStorage.getString(ID_ENCRYPTION_KEY_CHECKSUM))
         val auth2 = PasswordAuthorization("pw2", generalStorage, "auth2")
         appSigner.addAuth(auth2, auth1)
 
@@ -81,7 +104,8 @@ class AppSignerManagerTest {
     }
 
     companion object {
-        private const val ID_APP_SIGNER = "key_manager.string.app_signer"
-        private const val ID_APP_SIGNER_KEY_CHECKSUM = "key_manager.string.app_signer_key_checksum"
+        private const val ID_SIGNER_MNEMONIC = "app_signer.string.signer_mnemonic::default"
+        private const val ID_ENCRYPTION_KEY_CHECKSUM =
+            "app_signer.string.encryption_key_checksum::default"
     }
 }

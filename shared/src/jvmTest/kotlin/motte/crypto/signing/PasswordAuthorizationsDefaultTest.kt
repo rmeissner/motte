@@ -14,7 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
-class PasswordAuthorizationsTest {
+class PasswordAuthorizationsDefaultTest {
     private val password = "test_password"
     private val key = "test_key".toByteArray().keccak()
     private lateinit var generalStorage: GeneralStorage
@@ -27,12 +27,13 @@ class PasswordAuthorizationsTest {
     }
 
     @Test
-    fun setupAuthAndLoad() {
+    fun setupAuthAndLoadDefault() {
         authorization.setup(key)
-        assertNotNull(generalStorage.getString(ID_ENCRYPTED_APP_SIGNER_KEY))
-        assertNotEquals(String(key), generalStorage.getString(ID_ENCRYPTED_APP_SIGNER_KEY))
+        assertNotNull(generalStorage.getString(ID_ENCRYPTED_KEY))
+        assertNotEquals(String(key), generalStorage.getString(ID_ENCRYPTED_KEY))
         assertNotNull(generalStorage.getString(ID_ENCRYPTED_CHECKSUM))
-        assertNotEquals(String(key), generalStorage.getString(ID_ENCRYPTED_APP_SIGNER_KEY))
+        assertNotEquals(String(key), generalStorage.getString(ID_ENCRYPTED_CHECKSUM))
+        assertNotEquals(String(checksum(key)), generalStorage.getString(ID_ENCRYPTED_CHECKSUM))
 
         assertArrayEquals(
             key,
@@ -71,7 +72,7 @@ class PasswordAuthorizationsTest {
     @Test
     fun setupAuthAndLoadNoAppId() {
         authorization.setup(key)
-        generalStorage.remove(ID_ENCRYPTED_APP_SIGNER_KEY)
+        generalStorage.remove(ID_ENCRYPTED_KEY)
         val error = assertThrows(IllegalStateException::class.java) {
             authorization.keyBytes(byteArrayOf())
         }
@@ -81,18 +82,18 @@ class PasswordAuthorizationsTest {
     @Test
     fun setupAuthAndLoadWrongPassword() {
         authorization.setup(key)
-        generalStorage.remove(ID_ENCRYPTED_APP_SIGNER_KEY)
+        generalStorage.remove(ID_ENCRYPTED_KEY)
         // Use different auth with invalid password
         val auth = PasswordAuthorization("wrong", generalStorage)
-        assertThrows(InvalidCipherTextException::class.java) {
+        assertThrows(IllegalStateException::class.java) {
             auth.keyBytes(byteArrayOf())
         }
     }
 
     companion object {
-        private const val ID_ENCRYPTED_APP_SIGNER_KEY =
-            "password_authorization.string.encrypted_app_signer_key"
+        private const val ID_ENCRYPTED_KEY =
+            "password_authorization.string.encrypted_key::default"
         private const val ID_ENCRYPTED_CHECKSUM =
-            "password_authorization.string.encrypted_checksum"
+            "password_authorization.string.encrypted_checksum::default"
     }
 }
