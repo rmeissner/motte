@@ -1,3 +1,6 @@
+> [!WARNING]
+> Code in this repository is not audited and may contain serious security holes. Use at your own risk.
+
 # Motte
 
 <p align="center">
