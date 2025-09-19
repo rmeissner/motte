@@ -1,11 +1,12 @@
 # Motte
 
+<p align="center">
+    <img width="631" height="400" alt="image" src="./docs/motte_castle_explainer.png" />
+</p>
+
 A motte is an artificial mound made of earth and stone upon which the castle's keep (fortified tower) was built, providing a raised, defensible position. 
 
 Motte provides a collection of libraries (the mound) written for Kotlin MPP to build key management crypto apps (the castle's keep) with.
-
-<img width="631" height="400" alt="image" src="./docs/motte_castle_explainer.png" />
-
 
 ## Publish to local Maven
 
